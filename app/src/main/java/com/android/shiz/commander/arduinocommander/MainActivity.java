@@ -101,10 +101,10 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onPause() {
         super.onPause();
-//        setUiEnabled(false);
+        setUiEnabled(false);
 
-//        unregisterReceiver(mUsbReceiver);
-//        unbindService(usbConnection);
+        unregisterReceiver(mUsbReceiver);
+        unbindService(usbConnection);
     }
 
     @Override
