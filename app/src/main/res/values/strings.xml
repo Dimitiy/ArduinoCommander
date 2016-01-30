@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">ArduinoCommander</string>
+
+    <!-- Strings related to login -->
+    <string name="prompt_login">Login</string>
+    <string name="prompt_password">Password</string>
+    <string name="action_sign_in">Sign in or register</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="error_invalid_login">This login address is invalid</string>
+    <string name="error_invalid_password">This password is too short</string>
+    <string name="error_incorrect_password">This password or login are incorrect</string>
+    <string name="error_field_required">This field is required</string>
+    <string name="permission_rationale">"Contacts permissions are needed for providing email
+        completions."
+    </string>
+    <string name="led_1">LED 1</string>
+    <string name="led_2">LED 2</string>
+    <string name="led_3">LED 3</string>
+    <string name="default_value">...</string>
+</resources>
