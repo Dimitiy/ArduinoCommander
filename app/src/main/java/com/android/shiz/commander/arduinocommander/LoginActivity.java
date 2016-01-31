@@ -55,7 +55,15 @@ public class LoginActivity extends AppCompatActivity {
         // Set up the login form.
         mLoginView = (AutoCompleteTextView) findViewById(R.id.login);
 //        populateAutoComplete();
-
+        File sdcard = Environment.getExternalStorageDirectory();
+        File loginsFile = new File(sdcard, "logins.txt");
+        if(!loginsFile.exists()) {
+            try {
+                loginsFile.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         mPasswordView = (EditText) findViewById(R.id.password);
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override

@@ -18,6 +18,7 @@ import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 /**
@@ -38,7 +39,7 @@ public class UsbService extends Service {
     public static final int MESSAGE_FROM_SERIAL_PORT = 0;
     public static final int MESSAGE_ACTION_USB_READY = 1;
     private static final String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
-    private static final int BAUD_RATE = 9600; // BaudRate. Change this value if you need
+    private static final int BAUD_RATE = 115200; // BaudRate. Change this value if you need
     public static boolean SERVICE_CONNECTED = false;
 
     private IBinder binder = new UsbBinder();
@@ -59,13 +60,9 @@ public class UsbService extends Service {
     private UsbSerialInterface.UsbReadCallback mCallback = new UsbSerialInterface.UsbReadCallback() {
         @Override
         public void onReceivedData(byte[] arg0) {
-            try {
-                String data = new String(arg0, "UTF-8");
-                if (mHandler != null)
-                    mHandler.obtainMessage(MESSAGE_FROM_SERIAL_PORT, data).sendToTarget();
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
+            String data = new String(arg0,  StandardCharsets.UTF_8);
+            if (mHandler != null)
+                mHandler.obtainMessage(MESSAGE_FROM_SERIAL_PORT, data).sendToTarget();
         }
     };
     /*
@@ -89,8 +86,6 @@ public class UsbService extends Service {
                 {
                     Intent intent = new Intent(ACTION_USB_PERMISSION_NOT_GRANTED);
                     arg0.sendBroadcast(intent);
-                    Toast.makeText(getApplicationContext(), "ACTION_USB_PERMISSION_NOT_GRANTED", Toast.LENGTH_SHORT).show();
-
                 }
             } else if (arg1.getAction().equals(ACTION_USB_ATTACHED)) {
                 if (!serialPortConnected)
@@ -103,8 +98,6 @@ public class UsbService extends Service {
                 serialPort.close();
                 if (mHandler != null)
                     mHandler.obtainMessage(MESSAGE_ACTION_USB_READY, "0").sendToTarget();
-                Toast.makeText(getApplicationContext(), "ACTION_USB_DISCONNECTED", Toast.LENGTH_SHORT).show();
-
             }
         }
     };
@@ -115,7 +108,7 @@ public class UsbService extends Service {
      */
     @Override
     public void onCreate() {
-        this.context = getApplicationContext();
+        this.context = this;
         serialPortConnected = false;
         UsbService.SERVICE_CONNECTED = true;
         setFilter();
@@ -231,7 +224,6 @@ public class UsbService extends Service {
                     // Everything went as expected. Send an intent to MainActivity
                     Intent intent = new Intent(ACTION_USB_READY);
                     context.sendBroadcast(intent);
-                    Toast.makeText(getApplicationContext(), "ACTION_USB_READY", Toast.LENGTH_SHORT).show();
                     if (mHandler != null)
                         mHandler.obtainMessage(MESSAGE_ACTION_USB_READY, "1").sendToTarget();
                 } else {

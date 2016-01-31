@@ -1,34 +1,43 @@
 package com.android.shiz.commander.arduinocommander;
 
-import android.content.BroadcastReceiver;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.ServiceConnection;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.IBinder;
-import android.os.Message;
-import android.support.v7.app.AppCompatActivity;
-import android.widget.Button;
-import android.widget.CompoundButton;
-import android.widget.Switch;
-import android.widget.TextView;
-import android.widget.Toast;
+        import android.content.BroadcastReceiver;
+        import android.content.ComponentName;
+        import android.content.Context;
+        import android.content.Intent;
+        import android.content.IntentFilter;
+        import android.content.ServiceConnection;
+        import android.content.pm.ActivityInfo;
+        import android.os.Bundle;
+        import android.os.Handler;
+        import android.os.IBinder;
+        import android.os.Message;
+        import android.support.v7.app.AppCompatActivity;
+        import android.util.Log;
+        import android.widget.Button;
+        import android.widget.CompoundButton;
+        import android.widget.Switch;
+        import android.widget.TextView;
+        import android.widget.Toast;
 
-import java.lang.ref.WeakReference;
-import java.util.Set;
+        import java.lang.ref.WeakReference;
+        import java.util.Set;
 
 /**
  * Created by OldMan on 30.01.2016.
  */
 public class MainActivity extends AppCompatActivity implements
         CompoundButton.OnCheckedChangeListener {
+    static boolean stateUSB;
+    private UsbService usbService;
 
+    private MyHandler mHandler;
+    private TextView led1TextView, led2TextView, textViewButton;
+    private Switch led1Switch, led2Switch;
+    private Button sendButton;
+    private boolean isUsbReceiver = false;
     /*
-        * Notifications from UsbService will be received here.
-        */
+    * Notifications from UsbService will be received here.
+    */
     private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -51,12 +60,6 @@ public class MainActivity extends AppCompatActivity implements
             }
         }
     };
-    private UsbService usbService;
-
-    private MyHandler mHandler;
-    private TextView led1TextView, led2TextView, led3TextView;
-    private Switch led1Switch, led2Switch;
-    private Button sendButton;
 
     private final ServiceConnection usbConnection = new ServiceConnection() {
         @Override
@@ -75,16 +78,25 @@ public class MainActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        boolean tablet = getResources().getBoolean(R.bool.tablet);
+        if (!tablet)
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
         mHandler = new MyHandler(this);
 
         led1Switch = (Switch) findViewById(R.id.switch1);
         led2Switch = (Switch) findViewById(R.id.switch2);
         led1TextView = (TextView) findViewById(R.id.textView);
         led2TextView = (TextView) findViewById(R.id.textView2);
-        led3TextView = (TextView) findViewById(R.id.textView4);
+        textViewButton = (TextView) findViewById(R.id.textView4);
         led1Switch.setOnCheckedChangeListener(this);
         led2Switch.setOnCheckedChangeListener(this);
-
+//        if (savedInstanceState != null){
+//            Log.d(MainActivity.this.toString(), "savedInstanceState");
+//            led1Switch.setChecked(savedInstanceState.getBoolean("led1"));
+//            led2Switch.setChecked(savedInstanceState.getBoolean("led2"));
+//            textViewButton.setText(savedInstanceState.getString("button"));
+//        }
+        Log.d(MainActivity.this.toString(), "NOsavedInstanceState");
         setUiEnabled(false);
 
     }
@@ -92,26 +104,48 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onResume() {
         super.onResume();
-        setFilters();  // Start listening notifications from UsbService
-        startService(UsbService.class, usbConnection, null); // Start UsbService(if it was not started before) and Bind it
-//        setUiEnabled(true);
-
+            setFilters();  // Start listening notifications from UsbService
+            startService(UsbService.class, usbConnection, null); // Start UsbService(if it was not started before) and Bind it
+            isUsbReceiver = true;
+       if (stateUSB == true)
+            setUiEnabled(true);
     }
 
     @Override
     public void onPause() {
         super.onPause();
         setUiEnabled(false);
-
-        unregisterReceiver(mUsbReceiver);
-        unbindService(usbConnection);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(mUsbReceiver);
-        unbindService(usbConnection);
+        unregisterUSB();
+
+    }
+
+    //    private Bundle saveState() {
+//        Bundle state = new Bundle();
+//        state.putBoolean("led1", led1Switch.isChecked());
+//        state.putBoolean("led2", led2Switch.isChecked());
+//        state.putString("button", textViewButton.getText().toString());
+//        return state;
+//    }
+//    @Override
+//    protected void onSaveInstanceState(Bundle outState) {
+//
+//        outState.putBoolean("led1", led1Switch.isChecked());
+//        outState.putBoolean("led2", led2Switch.isChecked());
+//        outState.putString("button", textViewButton.getText().toString());
+//
+//        super.onSaveInstanceState(outState);
+//        Log.d(MainActivity.this.toString(), "save");
+//
+//    }
+    private void unregisterUSB() {
+            unregisterReceiver(mUsbReceiver);
+            unbindService(usbConnection);
+            isUsbReceiver = false;
     }
 
     /**
@@ -140,25 +174,18 @@ public class MainActivity extends AppCompatActivity implements
             case R.id.switch1:
                 if (isChecked) {
                     led1TextView.setText("ON"); // test
-                    led3TextView.setText("wait"); // test
                     sendDataToArduino("1");
-                    Toast.makeText(MainActivity.this, "send 1", Toast.LENGTH_SHORT).show();
                 } else {
                     led1TextView.setText("OFF"); // test
-                    led3TextView.setText("wait"); // test
                     sendDataToArduino("4");
                 }
                 break;
             case R.id.switch2:
                 if (isChecked) {
                     led2TextView.setText("ON"); // test
-                    led3TextView.setText("wait"); // test
                     sendDataToArduino("2");
-                    Toast.makeText(MainActivity.this, "send 2", Toast.LENGTH_SHORT).show();
-
                 } else {
                     led2TextView.setText("OFF"); // test
-                    led3TextView.setText("wait"); // test
                     sendDataToArduino("5");
                 }
                 break;
@@ -200,8 +227,8 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     /*
-     * This handler will be passed to UsbService. Data received from serial port is displayed through this handler
-     */
+  * This handler will be passed to UsbService. Data received from serial port is displayed through this handler
+  */
     private static class MyHandler extends Handler {
         private final WeakReference<MainActivity> mActivity;
 
@@ -211,42 +238,48 @@ public class MainActivity extends AppCompatActivity implements
 
         @Override
         public void handleMessage(Message msg) {
-            switch (msg.what) {
+           switch (msg.what) {
                 case UsbService.MESSAGE_FROM_SERIAL_PORT:
-                    String data = (String) msg.obj;
-                    switch (data) {
-                        case "1":
-                            mActivity.get().led1TextView.setText("Ok!");
-                            break;
-                        case "4":
-                            mActivity.get().led1TextView.setText("Not Ok!");
-                            break;
-                        case "2":
-                            mActivity.get().led2TextView.setText("Ok!");
-                            break;
-                        case "5":
-                            mActivity.get().led2TextView.setText("Not Ok!");
-                            break;
-                        case "3":
-                            mActivity.get().led3TextView.setText("Ok!");
-                            break;
-                        case "6":
-                            mActivity.get().led3TextView.setText("Not Ok!");
-                            break;
+                    String data = ((String) msg.obj).replaceAll("\\D+", "");
+                    if(data.length() > 0) {
+                        Toast.makeText(mActivity.get(), data, Toast.LENGTH_SHORT).show();
+                        switch (data) {
+                            case "1":
+                                mActivity.get().led1TextView.setText("Ok!");
+                                break;
+                            case "4":
+                                mActivity.get().led1TextView.setText("Not Ok!");
+                                break;
+                            case "2":
+                                mActivity.get().led2TextView.setText("Ok!");
+                                break;
+                            case "5":
+                                mActivity.get().led2TextView.setText("Not Ok!");
+                                 break;
+                            case "3":
+                                mActivity.get().textViewButton.setText("Ok!");
+                                break;
+                            case "6":
+                                mActivity.get().textViewButton.setText("Not Ok!");
+                                break;
+                        }
                     }
-                    break;
+                        break;
+
                 case UsbService.MESSAGE_ACTION_USB_READY:
                     String ready = (String) msg.obj;
                     switch (ready) {
                         case "1":
                             mActivity.get().setUiEnabled(true);
-
+                            stateUSB = true;
                             break;
                         case "0":
                             mActivity.get().setUiEnabled(false);
+                            stateUSB = false;
                             break;
 
                     }
             }
         }
-    }}
+    }
+}
