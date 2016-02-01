@@ -24,13 +24,9 @@ import android.widget.TextView;
 import java.io.File;
 import java.io.IOException;
 
-/**
- * A login screen that offers login via email/password.
- */
-
 
 /**
- * A login screen that offers login via email/password.
+ * Класс экрана авторизации через логин и пароль.
  */
 public class LoginActivity extends AppCompatActivity {
 
@@ -38,23 +34,26 @@ public class LoginActivity extends AppCompatActivity {
     private SharedPreferences prefs;
 
     /**
-     * Keep track of the login task to ensure we can cancel it if requested.
+     * Переменная класса фоновой задачи.
      */
     private UserLoginTask mAuthTask = null;
 
-    // UI references.
+    // Объекты графичесого интерфейса.
     private AutoCompleteTextView mLoginView;
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
 
+    /**
+     * Метод создания актинвости.
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-        // Set up the login form.
+
         mLoginView = (AutoCompleteTextView) findViewById(R.id.login);
-//        populateAutoComplete();
         File sdcard = Environment.getExternalStorageDirectory();
         File loginsFile = new File(sdcard, "logins.txt");
         if(!loginsFile.exists()) {
@@ -64,6 +63,7 @@ public class LoginActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
+        // Инициализация свойств текствью для ввода пароля.
         mPasswordView = (EditText) findViewById(R.id.password);
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
@@ -76,7 +76,8 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
-        Button mLoginSignInButton = (Button) findViewById(R.id.email_sign_in_button);
+        // Инициализация свойств кнопки для старта функции авторизации.
+        Button mLoginSignInButton = (Button) findViewById(R.id.login_sign_in_button);
         mLoginSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -92,34 +93,32 @@ public class LoginActivity extends AppCompatActivity {
 
 
     /**
-     * Attempts to sign in or register the account specified by the login form.
-     * If there are form errors (invalid email, missing fields, etc.), the
-     * errors are presented and no actual login attempt is made.
+     * Попытка авторизовать аккаунт по логину и пароля с фоормы.
      */
     private void attemptLogin() {
         if (mAuthTask != null) {
             return;
         }
 
-        // Reset errors.
+        // Сброс ошибок.
         mLoginView.setError(null);
         mPasswordView.setError(null);
 
-        // Store values at the time of the login attempt.
+        // Считывание логина и пароля с формы.
         String login = mLoginView.getText().toString();
         String password = mPasswordView.getText().toString();
 
         boolean cancel = false;
         View focusView = null;
 
-        // Check for a valid password, if the user entered one.
+        // Проверка пароля на валидность.
         if (!TextUtils.isEmpty(password) && !isPasswordValid(password)) {
             mPasswordView.setError(getString(R.string.error_invalid_password));
             focusView = mPasswordView;
             cancel = true;
         }
 
-        // Check for a valid email address.
+        // Проверка логина на валиднотсь.
         if (TextUtils.isEmpty(login)) {
             mLoginView.setError(getString(R.string.error_field_required));
             focusView = mLoginView;
@@ -130,36 +129,42 @@ public class LoginActivity extends AppCompatActivity {
             cancel = true;
         }
 
+        // Проверка на прерывание фоновой задачи.
         if (cancel) {
-            // There was an error; don't attempt login and focus the first
-            // form field with an error.
+           // В случае ошибки авторизации фокус переводится на поле, где была ошибка.
             focusView.requestFocus();
         } else {
-            // Show a progress spinner, and kick off a background task to
-            // perform the user login attempt.
+            // Показ спинера прогресса и запуск фоновой задачи авторизации.
             showProgress(true);
             mAuthTask = new UserLoginTask(login, password);
             mAuthTask.execute((Void) null);
         }
     }
 
+    /**
+     * Провекра валидности логина.
+     * @param email
+     * @return
+     */
     private boolean isLoginValid(String email) {
         return true;
     }
 
+    /**
+     * Проверка валидности пароля.
+     * @param password
+     * @return
+     */
     private boolean isPasswordValid(String password) {
-        //TODO: Replace this with your own logic
         return password.length() > 0;
     }
 
     /**
-     * Shows the progress UI and hides the login form.
+     * Показывает прогресс и срывает активность авторизации пользователя.
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
     private void showProgress(final boolean show) {
-        // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
-        // for very easy animations. If available, use these APIs to fade-in
-        // the progress spinner.
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
             int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
 
@@ -181,8 +186,7 @@ public class LoginActivity extends AppCompatActivity {
                 }
             });
         } else {
-            // The ViewPropertyAnimator APIs are not available, so simply show
-            // and hide the relevant UI components.
+            // Скрытие спинера прогресса.
             mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
             mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
         }
@@ -190,14 +194,14 @@ public class LoginActivity extends AppCompatActivity {
 
 
     /**
-     * Represents an asynchronous login/registration task used to authenticate
-     * the user.
+     * Класс асихронной задачи авторизации пользователя.
      */
     public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
 
         private final String mLogin;
         private final String mPassword;
 
+        // Конструктор класса фоновой задачи.
         UserLoginTask(String email, String password) {
             mLogin = email;
             mPassword = password;
@@ -216,13 +220,15 @@ public class LoginActivity extends AppCompatActivity {
                 LoginDataChecker.setLoginCheck(false);
             }
 
-
+            // Условие проверки списка на ненулевое количество элементов.
             if (credentials.length != 0)
+                // Проверка введённых учётных данных на совпадение с имеющимися.
                 for (String credential : credentials) {
                     String[] pieces = credential.split(":");
 
                     Log.d(LOG_TAG, pieces[0] + " - " + pieces[1] + " - " + mLogin + " - " + mPassword);
 
+                    // Условие проверки логина.
                     if (pieces[0].equals(mLogin)) {
                         // Account exists, return true if the password matches.
                         Log.d(LOG_TAG, "The first time.");
@@ -232,16 +238,19 @@ public class LoginActivity extends AppCompatActivity {
                         return pieces[1].equals(mPassword);
                     }
                 }
-
-            // TODO: register the new account here.
             return false;
         }
 
+        /**
+         * Метод, выполняемы после завершения основной задачи.
+         * @param success
+         */
         @Override
         protected void onPostExecute(final Boolean success) {
             mAuthTask = null;
             showProgress(false);
 
+            // В случае успешной проверки логина и пароля запуск главной активности.
             if (success) {
 //                finish();
                 Intent intent = new Intent(getApplicationContext(), MainActivity.class);
@@ -254,6 +263,9 @@ public class LoginActivity extends AppCompatActivity {
             }
         }
 
+        /**
+         * Метод проверки флага прерывания выполнения задачи.
+         */
         @Override
         protected void onCancelled() {
             mAuthTask = null;

@@ -22,10 +22,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 /**
- * Created by OldMan on 30.01.2016.
+ * Класс USB-севриса, с помощью которого осуществляется соединение,
+ * приём и отправка сообщений.
  */
 public class UsbService extends Service {
 
+    // Набор действий для работы с USB.
     public static final String ACTION_USB_READY = "com.felhr.connectivityservices.USB_READY";
     public static final String ACTION_USB_ATTACHED = "android.hardware.usb.action.USB_DEVICE_ATTACHED";
     public static final String ACTION_USB_DETACHED = "android.hardware.usb.action.USB_DEVICE_DETACHED";
@@ -39,7 +41,7 @@ public class UsbService extends Service {
     public static final int MESSAGE_FROM_SERIAL_PORT = 0;
     public static final int MESSAGE_ACTION_USB_READY = 1;
     private static final String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
-    private static final int BAUD_RATE = 115200; // BaudRate. Change this value if you need
+    private static final int BAUD_RATE = 115200;
     public static boolean SERVICE_CONNECTED = false;
 
     private IBinder binder = new UsbBinder();
@@ -53,9 +55,7 @@ public class UsbService extends Service {
 
     private boolean serialPortConnected;
     /*
-     *  Data received from serial port will be received here. Just populate onReceivedData with your code
-     *  In this particular example. byte stream is converted to String and send to UI thread to
-     *  be treated there.
+     *  Данные, получаемые от последовательного порта, получают здесь.
      */
     private UsbSerialInterface.UsbReadCallback mCallback = new UsbSerialInterface.UsbReadCallback() {
         @Override
@@ -66,15 +66,14 @@ public class UsbService extends Service {
         }
     };
     /*
-     * Different notifications from OS will be received here (USB attached, detached, permission responses...)
-     * About BroadcastReceiver: http://developer.android.com/reference/android/content/BroadcastReceiver.html
+     * Различные сообщения от ОС будут получены здесь.
      */
     private final BroadcastReceiver usbReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context arg0, Intent arg1) {
             if (arg1.getAction().equals(ACTION_USB_PERMISSION)) {
                 boolean granted = arg1.getExtras().getBoolean(UsbManager.EXTRA_PERMISSION_GRANTED);
-                if (granted) // User accepted our USB connection. Try to open the device as a serial port
+                if (granted) // Пользователь принимает соединение с USB. Попытка открыть устройство как порт.
                 {
                     Intent intent = new Intent(ACTION_USB_PERMISSION_GRANTED);
                     arg0.sendBroadcast(intent);
@@ -82,16 +81,16 @@ public class UsbService extends Service {
                     serialPortConnected = true;
                     new ConnectionThread().run();
 
-                } else // User not accepted our USB connection. Send an Intent to the Main Activity
+                } else // Пользователь не принял соединение USB. Отправка сообщения главной активности.
                 {
                     Intent intent = new Intent(ACTION_USB_PERMISSION_NOT_GRANTED);
                     arg0.sendBroadcast(intent);
                 }
             } else if (arg1.getAction().equals(ACTION_USB_ATTACHED)) {
                 if (!serialPortConnected)
-                    findSerialPortDevice(); // A USB device has been attached. Try to open it as a Serial port
+                    findSerialPortDevice(); // USB-устройство присоединено.
             } else if (arg1.getAction().equals(ACTION_USB_DETACHED)) {
-                // Usb device was disconnected. send an intent to the Main Activity
+                // USB устройство не присодинено. Отправка сообщения главной активности.
                 Intent intent = new Intent(ACTION_USB_DISCONNECTED);
                 arg0.sendBroadcast(intent);
                 serialPortConnected = false;
@@ -103,8 +102,7 @@ public class UsbService extends Service {
     };
 
     /*
-     * onCreate will be executed when service is started. It configures an IntentFilter to listen for
-     * incoming Intents (USB ATTACHED, USB DETACHED...) and it tries to open a serial port.
+     * Метод будет выполнен, когда сервис запуститтся. Настраивается через IntentFilter.
      */
     @Override
     public void onCreate() {
@@ -116,20 +114,18 @@ public class UsbService extends Service {
         findSerialPortDevice();
     }
 
-    /* MUST READ about services
-     * http://developer.android.com/guide/components/services.html
-     * http://developer.android.com/guide/components/bound-services.html
-     */
     @Override
     public IBinder onBind(Intent intent) {
         return binder;
     }
 
+    // Метод запуска сервиса.
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         return Service.START_NOT_STICKY;
     }
 
+    // Уничтожение объекта сервиса.
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -137,19 +133,20 @@ public class UsbService extends Service {
     }
 
     /*
-     * This function will be called from MainActivity to write data through Serial Port
+     * Метод записи данных через последовательный порт.
      */
     public void write(byte[] data) {
         if (serialPort != null)
             serialPort.write(data);
     }
 
+    // Установка хендлера для сервиса.
     public void setHandler(Handler mHandler) {
         this.mHandler = mHandler;
     }
 
     private void findSerialPortDevice() {
-        // This snippet will try to open the first encountered usb device connected, excluding usb root hubs
+        // Здесь производятся попытки установить соединение с первым доступным USB-устройством.
         HashMap<String, UsbDevice> usbDevices = usbManager.getDeviceList();
         if (!usbDevices.isEmpty()) {
             boolean keep = true;
@@ -159,7 +156,7 @@ public class UsbService extends Service {
                 int devicePID = device.getProductId();
 
                 if (deviceVID != 0x1d6b && (devicePID != 0x0001 || devicePID != 0x0002 || devicePID != 0x0003)) {
-                    // There is a device connected to our Android device. Try to open it as a Serial Port.
+                    // Здесь имеется устройство соединённое с последовательным портом.
                     requestUserPermission();
                     keep = false;
                 } else {
@@ -171,12 +168,12 @@ public class UsbService extends Service {
                     break;
             }
             if (!keep) {
-                // There is no USB devices connected (but usb host were listed). Send an intent to MainActivity.
+                // Утройства, соединённые с последовательным портом, отсутствуют.
                 Intent intent = new Intent(ACTION_NO_USB);
                 sendBroadcast(intent);
             }
         } else {
-            // There is no USB devices connected. Send an intent to MainActivity
+            // Нет устройств, соединённых с USB. Отправка сообещения главной активности.
             Intent intent = new Intent(ACTION_NO_USB);
             sendBroadcast(intent);
         }
@@ -191,7 +188,7 @@ public class UsbService extends Service {
     }
 
     /*
-     * Request user permission. The response will be received in the BroadcastReceiver
+     * Требование разрешения пользователя. Ответ будет отправлен в БроадкастРесивер.
      */
     private void requestUserPermission() {
         PendingIntent mPendingIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
@@ -205,8 +202,7 @@ public class UsbService extends Service {
     }
 
     /*
-     * A simple thread to open a serial port.
-     * Although it should be a fast operation. moving usb operations away from UI thread is a good thing.
+     * Поток открытия последовательного порта.
      */
     private class ConnectionThread extends Thread {
         @Override
@@ -221,14 +217,14 @@ public class UsbService extends Service {
                     serialPort.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
                     serialPort.read(mCallback);
 
-                    // Everything went as expected. Send an intent to MainActivity
+                    // Всё происходит, как ожидалось. Отправка сообщения главной активности.
                     Intent intent = new Intent(ACTION_USB_READY);
                     context.sendBroadcast(intent);
                     if (mHandler != null)
                         mHandler.obtainMessage(MESSAGE_ACTION_USB_READY, "1").sendToTarget();
                 } else {
-                    // Serial port could not be opened, maybe an I/O error or if CDC driver was chosen, it does not really fit
-                    // Send an Intent to Main Activity
+                    // Последовательный порт не может быть открыт, может быть ошибки ввода/вывода или драйвера.
+                    // Отправка сообщения главной активности.
                     if (serialPort instanceof CDCSerialDevice) {
                         Intent intent = new Intent(ACTION_CDC_DRIVER_NOT_WORKING);
                         context.sendBroadcast(intent);
@@ -238,7 +234,7 @@ public class UsbService extends Service {
                     }
                 }
             } else {
-                // No driver for given device, even generic CDC driver could not be loaded
+                // Отсутствуюет драйвер устройства, даже общий драйвер не моежт быть загружен.
                 Intent intent = new Intent(ACTION_USB_NOT_SUPPORTED);
                 context.sendBroadcast(intent);
             }

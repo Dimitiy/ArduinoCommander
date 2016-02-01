@@ -12,12 +12,14 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
-
+/**
+ * Класс проверки логина и пароля на корректность.
+ */
 public class LoginDataChecker {
-    private static boolean loginCheck;
+    private static boolean loginCheck; // Статус проверки.
     private static final String LOG_TAG = LoginDataChecker.class.getSimpleName();
 
-    private static String[] credentials;
+    private static String[] credentials; // Строки "логин:пароль" из файла.
 
     public static String[] getCredentials() {
         Log.d("CHecked", "Ch: " + loginCheck);
@@ -25,14 +27,15 @@ public class LoginDataChecker {
             return null;
         }
 
-        credentials = readLoginsFromFile();
+        credentials = readLoginsFromFile(); // Чтение данных авторизации из файла.
 
         return credentials;
     }
 
+    // Метод чтения строк с файла.
     private static String[] readLoginsFromFile() {
-        File sdcard = Environment.getExternalStorageDirectory();
-        File loginsFile = new File(sdcard, "logins.txt");
+        File sdcard = Environment.getExternalStorageDirectory(); // Ссылка на внешнее хранилище.
+        File loginsFile = new File(sdcard, "logins.txt"); // Ссылка на файл с авторизационными данными.
 
         Log.d(LOG_TAG, "file: " + loginsFile.getAbsolutePath());
 
@@ -41,17 +44,17 @@ public class LoginDataChecker {
             String line;
             int i = 0;
             ArrayList<String> list = new ArrayList<>();
+            // Построчное считывания с файла.
             while ((line = bufferedReader.readLine()) != null) {
-//                credentials[i] = line;
                 list.add(line);
                 Log.d(LOG_TAG, "str " + i + " - " + line);
                 i++;
             }
-            credentials = list.toArray(new String[list.size()]);
+            credentials = list.toArray(new String[list.size()]); // Преобразование списка строк в массив.
         } catch (IOException e) {
             Log.d(LOG_TAG, "IOException");
 
-            credentials = new String[0];
+            credentials = new String[0]; // В случае ошибок возвращаем пустой массив строк.
         }
 
         return credentials;
